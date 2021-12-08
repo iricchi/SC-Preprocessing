@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 """
+Author: Ilaria Ricchi
+
 This pipeline is used mainly for RESTING STATE. 
 
 Order of the options (recommended to follow):
