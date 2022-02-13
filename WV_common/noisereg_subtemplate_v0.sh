@@ -1,7 +1,7 @@
 #!/bin/bash
 cd $DIREC
 
-for i in $FSL_TEMP"/template_noiseregression.fsf"; do
+for i in "/home/iricchi/Local/Tutorials/Pipeline/template_noiseregression.fsf"; do
     # Include outliers as regressors if needed
 
     if [ -f $DIREC"/outliers.txt" ]; then          

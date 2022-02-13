@@ -4,20 +4,26 @@
     "SCT_PATH": "/home/iricchi/sct_5.3.0/",
     "FSL_PATH": "/usr/local/fsl/",
     
-    "parent_path": "/media/miplab-nas2/Data2/SpinalCord/Spinal_fMRI_Lumbar/",
-    "data_root" : "LU_",
+    "parent_path": "/media/miplab-nas2/Data3/Ilaria/Meditation/",
+    "data_root" : "Pilot",
 
-    "fsl_template_dir": "/home/iricchi/PhDProjects/common_templates/template_fsf_rest",
+    "crop_runs": false,
+    "crop_rest": false,
 
     "anat": "anat",
     "func": "func",
     "physio": "physio",
     
-    "lumbar": true, 
-    "FS": 100,
+    "fsessions_name": "zoom_",
+
+    "lumbar": false, 
+    "FS": 2000,
+    "csf_mask": true,
 
     "anat_norm" : false,
     "moco": false,
+    "aligntorest": false,
+    "aligntofirst": false,
     "func_norm" : false,
     "pnm0": false,
     "pnm1": false,
@@ -29,11 +35,11 @@
                      "trigger" : "3"
                    },
 
-    "mode": "auto",
-    "cof": 1,
+    "mode": "Pilot01_AF",
+    "cof": 2,
 
     "denoising": false,
     "smoothing": false,
-    "prep_for_ta": true
+    "prep_for_ta": false
     
 }
