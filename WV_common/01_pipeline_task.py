@@ -298,8 +298,8 @@ class PreprocessingT(object):
         paths = []
         paths.extend(self.runs_list)
 
-        if rest:
-            paths.extend(list(np.unique(self.runs_rest)))
+        # if self.rest:
+        #     paths.extend(list(np.unique(self.runs_rest)))
 
         start = time.time()
         #if self.lumbar != 0:
