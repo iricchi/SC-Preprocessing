@@ -6,3 +6,5 @@ The initial version is the not super generalized one on resting state (v0).
 
 ## WARNING:
 Python 3.7 is required! Anaconda environment is suggested.
+
+NOTE: the task pipeline needs to be tested (and maybe debugged).
