@@ -369,9 +369,9 @@ class PreprocessingRS(object):
         subj_paths = [os.path.join(s, self.physio) for s in self.list_subjects]
 
         # (un)comment
-        s = self.list_subjects[2]
-        print(s)
-        subj_paths = [os.path.join(s, self.physio)]
+        # s = self.list_subjects[2]
+        # print(s)
+        # subj_paths = [os.path.join(s, self.physio)]
         #
 
         print(" ### Info: Converting text file ...") 
@@ -408,11 +408,11 @@ class PreprocessingRS(object):
 
         subj_paths = [os.path.join(s, self.physio) for s in self.list_subjects]
 
-        # (un)comment
-        s = self.list_subjects[2]
-        print(s)
-        subj_paths = [os.path.join(s, self.physio)]
-        #
+        # # (un)comment
+        # s = self.list_subjects[2]
+        # print(s)
+        # subj_paths = [os.path.join(s, self.physio)]
+        # #
 
         print("### Info: Physiological preparetion ...") 
 
@@ -565,11 +565,11 @@ class PreprocessingRS(object):
     def generate_evs(self):
         subj_paths = [os.path.join(s, self.physio) for s in self.list_subjects]
 
-        # (un)comment
-        s = self.list_subjects[2]
-        print(s)
-        subj_paths = [os.path.join(s, self.physio)]
-        #
+        # # (un)comment
+        # s = self.list_subjects[2]
+        # print(s)
+        # subj_paths = [os.path.join(s, self.physio)]
+        # #
 
         print("### Info: Generate EVS ...") 
 
@@ -631,10 +631,10 @@ class PreprocessingRS(object):
         # subj_paths = [os.path.join(s, self.func) for s in self.list_subjects if s.split('/')[-1] == 'LU_AT']
         # print(subj_paths)
 
-        # (un)comment
-        s = self.list_subjects[2]
-        print(s)
-        subj_paths = [os.path.join(s, self.physio)]
+        # # (un)comment
+        # s = self.list_subjects[2]
+        # print(s)
+        # subj_paths = [os.path.join(s, self.physio)]
         #
 
         print("### Info: Generate motion outliers ...") 
@@ -698,10 +698,10 @@ class PreprocessingRS(object):
     def apply_smoothing(self):
         subj_paths = [os.path.join(s, self.func) for s in self.list_subjects]
 
-        # (un)comment
-        s = self.list_subjects[2]
-        print(s)
-        subj_paths = [os.path.join(s, self.func)]
+        # # (un)comment
+        # s = self.list_subjects[2]
+        # print(s)
+        # subj_paths = [os.path.join(s, self.func)]
         #
 
         print("### Info: Generate motion outliers ...") 
