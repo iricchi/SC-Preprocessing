@@ -9,15 +9,19 @@ STEPS :
 
     // = could be done in parallel since one is one anat and the other on func
  
-    0) Segmentation with SCT and labels generation
+    0) Segmentation with SCT and labels generation (outside the pipeline)
+    
+    Preprocessing Pipeline:
     1) anat_norm (register to template, anatomical normalization) //
     2) moco (motor correction) // run also the motor correction jupyter notebook to see who to remove 
     3) func_norm (functional images normalization)
     4) pnm (physiological noise modelling)
     5) denoising (remove noise due to movements...)
-        NOTE (to add in README): added export path for python version because of fsl feat 5 that created 
+        NOTE (README): added export path for python version because of fsl feat 5 that created 
         problems in the specific  
-    6) smoothing 
+    6) smoothing (with sct_smoot_spinal_cord function because (at the native subject-level 
+      - like in the lumbar - we use this function) 
+      Population-wise this function changes with sct_math after normalization
     7) prep_for_ta (prepare niftii images for iCAPs)
     
     On matlab...
@@ -710,16 +714,15 @@ class PreprocessingRS(object):
 
         Parallel(n_jobs=self.n_jobs,
                  verbose=100,
-                 backend="threading")(delayed(self._fsl_smoothing)(sub)\
+                 backend="threading")(delayed(self._fslsct_smoothing)(sub)\
                  for sub in subj_paths)
 
         print("### Info: smoothing done in %.3f s" %(time.time() - start ))
         return
 
-    def _fsl_smoothing(self, sps):
-
+    def _fslsct_smoothing(self, sps):
+        
         os.system('export DIREC=%s; bash %s/smoothing.sh' % (sps, self.working_dir))
-
 
     def prepare_for_ta(self): 
         start = time.time()
@@ -754,6 +757,9 @@ class PreprocessingRS(object):
             os.system('rm -rf %s' % os.path.join(sps, 'TA'))
 
         os.system('export DIREC=%s; bash %s/prep_for_ta.sh' % (sps, self.working_dir))
+
+    
+    def _normalization(self, sps):
 
 
 
@@ -810,6 +816,7 @@ if __name__ == '__main__':
         PR.smoothing = True
     if '--prep_for_ta' in sys.argv:
         PR.prep_for_ta = True
+    if 
 
     PR.processes()
 
