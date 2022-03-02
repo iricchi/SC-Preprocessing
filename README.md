@@ -21,7 +21,7 @@ The new version for RS has a different order that can be implemented in task too
 7) TA (SpiCiCAPs) - matlab / GLM (outside scripts)
 
 ## WARNING / NOTE on smoothing:
-The old version and order contains the function `sct_spinalcord_smooth`, while the new one contains `sct_math` with the flag `-smooth` because this step in the older version was done before normalization and sct_math would not fit cause it would mix signals from different tissues types.
+The old version and order contains the function `sct_spinalcord_smooth`, while the new one contains `sct_math` with the flag `-smooth` because this step in the older version was done before normalization for population study to not mix signals from different tissues types. But on the subject level (e.g. in lumbar) there is no need to straighten also the cord (which is included in `sct_spinalcord_smooth`).
 
 ## WARNING / NOTE 2:
 Python 3.7 > is required! Anaconda environment is suggested.
