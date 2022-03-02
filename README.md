@@ -20,9 +20,11 @@ The new version for RS has a different order that can be implemented in task too
 6) Smoothing
 7) TA (SpiCiCAPs) - matlab / GLM (outside scripts)
 
+## WARNING / NOTE on smoothing:
+The old version and order contains the function `sct_spinalcord_smooth`, while the new one contains `sct_math` with the flag `-smooth` because this step in the older version was done before normalization and sct_math would not fit cause it would mix signals from different tissues types.
 
-## WARNING:
-Python 3.7 is required! Anaconda environment is suggested.
+## WARNING / NOTE 2:
+Python 3.7 > is required! Anaconda environment is suggested.
 
-NOTE: the task pipeline needs to be tested (and maybe debugged).
+NOTE: the task pipeline needs to be tested (and maybe debugged). In particular this has not been modified with the normalization step before (like in rest). 
 
