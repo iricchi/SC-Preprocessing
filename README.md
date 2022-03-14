@@ -44,7 +44,7 @@ The flag "lumbar" is used for the functional normalization and for PNM (CSF mask
 
 The variable `mode` is still related to the PNM stage: it can be either `auto` or the name of the subject of interest. When `mode = auto`, the PNM will go through all subjects, otherwise it will be applied only on the subject of interest to check one specific output.
 
-*Note on the normalization flag*: if this is true, the normalization to template will be applied on subjects and the smoothing will consequently be applied using `sct_math` function (population study). If the normalization is not used (subject-wise analysis), the smoothing will be run with sct_smooth_spinalcord.
+**Note on the normalization flag**: if this is true, the normalization to template will be applied on subjects and the smoothing will consequently be applied using `sct_math` function (population study). If the normalization is not used (subject-wise analysis), the smoothing will be run with sct_smooth_spinalcord.
 
 
 
