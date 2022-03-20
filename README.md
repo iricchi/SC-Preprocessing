@@ -21,10 +21,12 @@ The new version for RS has a different order that can be implemented in task too
 6) Smoothing
 7) TA (SpiCiCAPs) - matlab / GLM (outside scripts)
 
-## WARNING / NOTE on smoothing:
+## WARNING / NOTE on smoothing and normalization:
 The old version and order contains the function `sct_spinalcord_smooth`, which is still used in the new version but in the subject level analysis since the normalization is generally not done, but at the population level we are using `sct_math` with the flag `-smooth` because we do not need to straigthen the spine in the template space.
 
 (e.g. in lumbar there is no need to straighten also the cord - which is included in `sct_spinalcord_smooth`).
+
+On normalization, the PAM50 template is by default the one saved in SCT path, if you want to use another template (e.g. lumbar cropped), there is the configuration file variable `pam50_template` to specify with the path to the template.
 
 ## WARNING / NOTE 2:
 Python 3.7 > is required! Anaconda environment is suggested.
@@ -43,6 +45,8 @@ The flag "lumbar" is used for the functional normalization and for PNM (CSF mask
 "FS" is the sampling frequency. The following variables `anat_norm, moco, func_norm, pnm0, pnm1, pnm2, pnm3, denoising, normalization, smoothing, prep_for_ta` all correspond to the different steps, therefore are simple flags. `pnm_columns` is a dictionary with keys that correspond to respiratory, cardiac and trigger to indicate which column they are in the text file [note that the numbers are in matlab-style 1=first coulumn, then in the script there's a subtraction for python].
 
 The variable `mode` is still related to the PNM stage: it can be either `auto` or the name of the subject of interest. When `mode = auto`, the PNM will go through all subjects, otherwise it will be applied only on the subject of interest to check one specific output.
+
+Lastly `pam50_template` specifies the file path of the template to use for the normalization (e.g. personalized version because cropped). If this variable is not existing in the config file, than the normal full PAM50 will be used.
 
 **Note on the normalization flag**: if this is true, the normalization to template will be applied on subjects and the smoothing will consequently be applied using `sct_math` function (population study). If the normalization is not used (subject-wise analysis), the smoothing will be run with sct_smooth_spinalcord.
 
