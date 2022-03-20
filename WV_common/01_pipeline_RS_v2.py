@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/python
 
 """
@@ -20,11 +21,18 @@ STEPS :
         NOTE (README): added export path for python version because of fsl feat 5 that created 
         problems in the specific  
     6) normalization for population study especially (but could be run also subject-level)
-    Remeber to crop PAM50 to have a template that is not the whole spine otherwise too long
+        [This step initially was run after iCAPs, in case the normalization should be run
+        after iCAPs, do not use this script but the external scripts in bash and matlab: 
+        'a_normalization_after_ta.sh' and 'b_normalization_after_ta.m']
+   
+     You can also crop PAM50 to have a template that is not the whole spine otherwise too long
     (this could be in the local directory for example on the Lumbar project on the server 
     ~/PhDProjects/Lumbar/templates)
-    run sct_warp_template -d PAM50_t2_cropped.nii.gz -w transform_identity.txt -s 1 -ofolder PATH_OUTPUT
-    7) smoothing (with sct_math) 
+    run:
+     sct_crop_image -i PATH_TO_PAM50_t2 -o PAM50_t2_cropped.nii.gz -zmin 0 -zmax XX
+     sct_warp_template -d PAM50_t2_cropped.nii.gz -w transform_identity.txt -s 1 -ofolder PATH_OUTPUT
+
+    7) smoothing (with sct_math if normalization has been run or sct_smooth_spinal_cord otherwise (for subject-wise analysis) ) 
     8) prep_for_ta (prepare niftii images for iCAPs)
     
     On matlab...
@@ -132,6 +140,7 @@ class PreprocessingRS(object):
         self.fsessions_name = ''
         self.csf_mask = False  # default / in cervical should be true
         self.denoising = False
+        self.normalization = False
         self.smoothing = False
         self.prep_for_ta = False
 
@@ -166,6 +175,9 @@ class PreprocessingRS(object):
 
         if self.denoising:
             self.apply_denoising()
+
+        if self.normalization:
+            self.normalize()
 
         if self.smoothing:
             self.apply_smoothing()
@@ -358,7 +370,7 @@ class PreprocessingRS(object):
         # or apply transfo
 
         run_string = 'cd %s; cd Normalization; \
-                      sct_concat_transfo -w warp_fmri2anat.nii.gz ../../%s/warp_anat2template.nii.gz -o warp_fmri2template.nii.gz -d %s/data/PAM50/template/PAM50_t2.nii.gz;\
+                      sct_concat_transfo -w warp_fmri2anat.nii.gz ../../%s/warp_anat2template.nii.gz -o warp_fmri2template.nii.gz -d %sdata/PAM50/template/PAM50_t2.nii.gz;\
                       sct_concat_transfo -w ../../%s/warp_template2anat.nii.gz warp_anat2fmri.nii.gz -o warp_template2fmri.nii.gz -d ../mfmri_mean.nii.gz'\
                       % (sps, self.anat, self.SCT_PATH, self.anat)
 
@@ -649,7 +661,6 @@ class PreprocessingRS(object):
 
         print("### Info: motion outliers generation done in %.3f s" %(time.time() - start ))
 
-        # self.notParallel_denoising(subj_paths)
         return 
 
     def _fsl_motion_outliers(self, sps):
@@ -696,6 +707,42 @@ class PreprocessingRS(object):
         print(run_string4)
         os.system(run_string4)
     
+
+    def normalize(self, atype='after_denoise'):
+        subj_paths = [os.path.join(s, self.func) for s in self.list_subjects]
+
+        # # (un)comment
+        # s = self.list_subjects[0]
+        # print(s)
+        # subj_paths = [os.path.join(s, self.func)]
+        #
+
+        print("### Info: Starting normalization ...") 
+
+        start = time.time()
+
+        Parallel(n_jobs=self.n_jobs,
+                 verbose=100,
+                 backend="threading")(delayed(self._normalization)(sub)\
+                 for sub in subj_paths)
+
+        print("### Info: normalization done in %.3f s" %(time.time() - start ))
+    
+    def _normalization(self, sps):
+
+        if hasattr(self, 'pam50_template'):
+            PAM50_TEMP = self.pam50_template
+        else:
+            PAM50_TEMP = os.path.join(self.SCT_PATH,'data','PAM50','template','PAM50_t2.nii.gz')
+
+        run_string = 'cd %s; sct_apply_transfo -i mfmri_denoised.nii.gz -d %s -w Normalization/warp_fmri2template.nii.gz\
+                     -x linear -o mfmri_denoised_n.nii.gz' %(sps, PAM50_TEMP)
+
+        print(run_string)
+        os.system(run_string)
+
+        return
+
     def apply_smoothing(self):
         subj_paths = [os.path.join(s, self.func) for s in self.list_subjects]
 
@@ -719,7 +766,13 @@ class PreprocessingRS(object):
 
     def _fslsct_smoothing(self, sps):
         
-        os.system('export DIREC=%s; bash %s/smoothing.sh' % (sps, self.working_dir))
+        # if the normalization has been run before (which means that it was a population study)
+        # use smoothing with sct_math on the normalized images
+        # otherwise smooth the denoised images directly
+        if os.path.exists(os.path.join(sps,'mfmri_denoised_n.nii.gz')):
+            os.system('export DIREC=%s; bash %s/smoothing_math.sh' % (sps, self.working_dir))
+        else:        
+            os.system('export DIREC=%s; bash %s/smoothing.sh' % (sps, self.working_dir))
 
     def prepare_for_ta(self): 
         start = time.time()
@@ -754,10 +807,6 @@ class PreprocessingRS(object):
             os.system('rm -rf %s' % os.path.join(sps, 'TA'))
 
         os.system('export DIREC=%s; bash %s/prep_for_ta.sh' % (sps, self.working_dir))
-
-    
-    def _normalization(self, sps):
-
 
 
 if __name__ == '__main__':
@@ -809,11 +858,12 @@ if __name__ == '__main__':
         PR.pnm3 = True
     if '--denoising' in sys.argv:
         PR.denoising = True
+    if '--normalization' in sys.argv:
+        PR.normalization = True
     if '--smoothing' in sys.argv:
         PR.smoothing = True
     if '--prep_for_ta' in sys.argv:
         PR.prep_for_ta = True
-    if 
 
     PR.processes()
 
