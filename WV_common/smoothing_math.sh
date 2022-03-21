@@ -58,12 +58,14 @@ rm mfmri_denoised_padded.nii.gz
 
 files_to_smooth="$PWD"/*
 for b in $files_to_smooth; do # Loop through all files
-        sct_math -i $b -o $b"_smooth" -smooth 0.85,0.85,2.55
+        tmp_name=${b%.*}  # remove extensions
+        name=${tmp_name%.*}
+        sct_maths -i $b -o $name"_smooth.nii.gz" -smooth 0.85,0.85,2.55
         rm $b
 done
 
 # Concat, put back in initial folder and delete temporary folder
-fslmerge -t sn_mfmri_denoised_padded_2x2x6 mfmri_denoised_padded*_smooth.*
+fslmerge -t sn_mfmri_denoised_padded_2x2x6 mfmri_denoised_padded*_smooth.nii.gz
 mv sn_mfmri_denoised_padded_2x2x6.nii.gz ..
 cd ..
 
