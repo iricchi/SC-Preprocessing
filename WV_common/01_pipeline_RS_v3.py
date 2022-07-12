@@ -640,7 +640,7 @@ class PreprocessingRS(object):
         if self.csf_mask == True:
             # if there is a mask of the CSF only (mask_csf.nii) : it can be manually created or using 
             # fslmaths subtracting the mask of only the spinal cord from the mask of CSF+cord 
-            
+
             run_string = 'cd %s; %sbin/pnm_evs -i ../%s/mfmri.nii.gz -c %s_card%s.txt -r Stim_resp.txt -o %s --tr=2.5 --oc=4 --or=4 --multc=2 \
             --multr=2 --csfmask="../%s/Segmentation/mask_csf.nii.gz" --sliceorder=up --slicedir=z' % (sub, 
                                                                                                   self.FSL_PATH,
@@ -847,7 +847,7 @@ class PreprocessingRS(object):
             print("Removing TA folder...")
             os.system('rm -rf %s' % os.path.join(sps, 'TA'))
 
-        os.system('export DIREC=%s; bash %s/prep_for_ta.sh' % (sps, self.working_dir))
+        os.system('export DIREC=%s; export MASK_NAME=%s.nii.gz; bash %s/prep_for_ta.sh' % (sps, self.mask_fname, self.working_dir))
 
 
 if __name__ == '__main__':
