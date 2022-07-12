@@ -638,7 +638,9 @@ class PreprocessingRS(object):
             auto_mode = ''
 
         if self.csf_mask == True:
-            # if there is a mask of the CSF only (mask_csf.nii)
+            # if there is a mask of the CSF only (mask_csf.nii) : it can be manually created or using 
+            # fslmaths subtracting the mask of only the spinal cord from the mask of CSF+cord 
+            
             run_string = 'cd %s; %sbin/pnm_evs -i ../%s/mfmri.nii.gz -c %s_card%s.txt -r Stim_resp.txt -o %s --tr=2.5 --oc=4 --or=4 --multc=2 \
             --multr=2 --csfmask="../%s/Segmentation/mask_csf.nii.gz" --sliceorder=up --slicedir=z' % (sub, 
                                                                                                   self.FSL_PATH,
