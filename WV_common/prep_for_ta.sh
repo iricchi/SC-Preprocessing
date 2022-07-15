@@ -6,8 +6,8 @@ mkdir TA
 cd TA
 
 cp ../s_mfmri_denoised_2x2x6.nii.gz .
-cp ../Segmentation/mask_sc.nii.gz .
-gunzip mask_sc.nii.gz
+cp ../Segmentation/$MASK_NAME .
+gunzip $MASK_NAME
 
 # First, split data
 fslsplit s_mfmri_denoised_2x2x6.nii.gz resvol -t
