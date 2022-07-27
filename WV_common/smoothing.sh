@@ -13,10 +13,9 @@ cd Smoothing
 if [ ! -f slice_init.nii.gz ]; then
         fslroi ../../mfmri_denoised slice_init 0 -1 0 -1 0 1 0 -1
 fi
-
 dim=$(fslsize ../../mfmri_denoised.nii.gz)
-arrdim=($dim)
-z=${arrdim[5]}
+arr=(`echo ${dim}`)
+z=${arr[8]}
 maxz=$(( z-1 ))
 
 # Then, isolate slice last
