@@ -15,7 +15,7 @@ if [ ! -f slice_init.nii.gz ]; then
 fi
 dim=$(fslsize ../../mfmri_denoised.nii.gz)
 arr=(`echo ${dim}`)
-z=${arr[8]}
+z=${arr[5]}
 maxz=$(( z-1 ))
 
 # Then, isolate slice last
