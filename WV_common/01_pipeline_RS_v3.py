@@ -2,6 +2,8 @@
 #!/usr/bin/python
 
 """
+IMPORTANT NOTE: The denoising with feat works only on miplabsrv4 because fsl5 is there only.
+
 This pipeline is used mainly for RESTING STATE. 
 
 Order of the options (recommended to follow):
@@ -80,7 +82,7 @@ import sys
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-# import plotly.graph_objects as go
+import plotly.graph_objects as go
 import time
 from glob import glob
 from joblib import Parallel, delayed
@@ -97,14 +99,22 @@ class PreprocessingRS(object):
     Commands used:
     sct_deepseg_sc with viewer initialization
     sct_deepseg_sc -i t2.nii.gz -c t2 -centerline viewer
+
+    ### Lumbar
+    sct_deepseg -task seg_lumbar_sc_t2w -i t2.nii.gz 
+    sct_label_utils -i t2.nii.gz -create 32,257,374,99 -o label_caudaequinea.nii.gz
+    ###
+
     sct_label_utils -i t2.nii.gz -create-viewer 2,3,4,5,6,7,8,9,10,11,12 -o labels.nii.gz
     or this to generate labels for normalization 
+
     sct_label_vertebrae -i t2.nii.gz -s t2_seg.nii.gz -c t2
+
 
     But here I have always labelled the spinal levels so the option of the anatomical 
     normalization and registration to template is '-lspinal'.
 
-    For Lumbar (CSF add):
+    For Lumbar (if you add CSF):
     sct_propseg -i t2.nii.gz -c t2 -o t2_seg.nii.gz -CSF
     -
     fslmaths t2_seg.nii.gz -add t2_rescaled_CSF_seg.nii.gz t2_seg_CSF.nii.gz
@@ -137,6 +147,7 @@ class PreprocessingRS(object):
         self.pnm2 = False   # second step: check peaks of cardiac sig
         self.pnm3 = False   # third step: generate evs 
         self.cof = 2  # default filter parameter for pnm0
+        self.filter = False   # by default don't filter data
         self.mode = ''
         self.fsessions_name = ''
         self.csf_mask = False  # default / in cervical should be true
@@ -206,6 +217,13 @@ class PreprocessingRS(object):
         # assign the list of subjects variable
         self.list_subjects = glob(os.path.join(self.parent_path, self.data_root+'*'))
 
+        ##### OVERWRITE FOR NEW ANALYSIS
+        self.list_subjects = [sub for sub in self.list_subjects if sub.split('/')[-1] 
+                              in ['LU_EM', 'LU_SM', 'LU_ML', 'LU_NS','LU_BN','LU_RL','LU_IR', 'LU_NB']]
+                             # == 'LU_EM']
+                             # in ['LU_SM', 'LU_NS','LU_BN','LU_RL','LU_IR', 'LU_NB']]
+        print("Processing subjects:", self.list_subjects)
+        
     def anat_seg_norm(self):
         subj_paths = [os.path.join(s, self.anat) for s in self.list_subjects]
        
@@ -224,7 +242,7 @@ class PreprocessingRS(object):
         start = time.time()
         Parallel(n_jobs=self.n_jobs,
                  verbose=100,
-                 backend="threading")(delayed(self._register_to_template)(sub)\
+                 backend="multiprocessing")(delayed(self._register_to_template)(sub)\
                  for sub in subj_paths)
 
         print("### Normalization Done!")
@@ -302,7 +320,7 @@ class PreprocessingRS(object):
         
         Parallel(n_jobs=self.n_jobs,
                  verbose=100,
-                 backend="threading")(delayed(self._create_mask)(sub)\
+                 backend="multiprocessing")(delayed(self._create_mask)(sub)\
                  for sub in subj_paths)
 
 
@@ -312,14 +330,14 @@ class PreprocessingRS(object):
 
         Parallel(n_jobs=self.n_jobs,
                  verbose=100,
-                 backend="threading")(delayed(self._moco)(sub)\
+                 backend="multiprocessing")(delayed(self._moco)(sub)\
                  for sub in subj_paths)
 
         print("### Info: Motor correction done in %.3f s" %(time.time() - start ))
         
         Parallel(n_jobs=self.n_jobs,
                  verbose=100,
-                 backend="threading")(delayed(self._move_processing)(sub)\
+                 backend="multiprocessing")(delayed(self._move_processing)(sub)\
                  for sub in subj_paths)
 
         return 
@@ -354,11 +372,11 @@ class PreprocessingRS(object):
         
         subj_paths = [os.path.join(s, self.func) for s in self.list_subjects]
         
-        ## (un)comment
-        # s = self.list_subjects[0]
+        # (un)comment
+        # s = self.list_subjects[12]
         # print(s)
         # subj_paths = [os.path.join(s, self.func)]
-        ##
+        # #
         
 
         print(" ### Info: Functional Normalization ...") 
@@ -367,7 +385,7 @@ class PreprocessingRS(object):
 
         Parallel(n_jobs=self.n_jobs,
                  verbose=100,
-                 backend="threading")(delayed(self._register_multimodal)(sub)\
+                 backend="multiprocessing")(delayed(self._register_multimodal)(sub)\
                  for sub in subj_paths)
 
         print("### Info: Functional Normalization done in %.3f s" %(time.time() - start ))
@@ -376,7 +394,7 @@ class PreprocessingRS(object):
 
         Parallel(n_jobs=self.n_jobs,
                  verbose=100, 
-                 backend="threading")(delayed(self._concat_transfo)(sub)\
+                 backend="multiprocessing")(delayed(self._concat_transfo)(sub)\
                  for sub in subj_paths)
 
         print("### Info: Concatenation tranformation done in %.3f s" %(time.time() - start ))
@@ -435,30 +453,50 @@ class PreprocessingRS(object):
         print(" ### Info: Converting text file ...") 
 
         start = time.time()
+        
+        ### NEW : not parallel anymore:
+        ### This parallel not always works becasue the processes are left there and
+        ## the txt file is not generated eventually
 
-        Parallel(n_jobs=self.n_jobs,
-                 verbose=100,
-                 backend="threading")(delayed(self._convert_txt_filt)(sub)\
-                 for sub in subj_paths)
+        # Parallel(n_jobs=self.n_jobs,
+        #          verbose=100,
+        #          backend="multiprocessing")(delayed(self._convert_txt_filt)(sub)\
+        #          for sub in subj_paths)
+
+        for sub in subj_paths:
+            self._convert_txt_filt(sub)
 
         print("### Info: File conversion done in %.3f s" %(time.time() - start ))
         return
 
-    def _convert_txt_filt(self, sub):
-
-        os.chdir(sub)   
+    def __get_mat_info(self):
         matstructfile = glob(os.path.join(os.getcwd(), '*.mat'))[0]
         matstruct = loadmat(matstructfile)
         data = matstruct['data']
+        FS = 1/matstruct['isi']*1000
 
-        cof = self.cof
-        Wn = (cof*2)/self.FS;
-        if Wn > 1.0:
-            Wn = 0.99
-        B,A = butter(3,Wn,'low');
-        data[:,1] = filtfilt(B,A,data[:,1]);
+        return matstructfile, data, FS[0][0]
 
-        data = np.array(data)
+    def _convert_txt_filt(self, sub):
+
+        os.chdir(sub)   
+        # matstructfile = glob(os.path.join(os.getcwd(), '*.mat'))[0]
+        # matstruct = loadmat(matstructfile)
+        # data = matstruct['data']
+        # FS = 1/matstruct['isi']*1000
+        
+        matstructfile, data, FS = self.__get_mat_info()
+
+        if self.filter:
+            cof = self.cof
+            Wn = (cof*2)/FS
+            if Wn > 1.0:
+                Wn = 0.99
+            B,A = butter(3,Wn,'low')
+            data[:,int(self.pnm_columns['cardiac'])-1] = filtfilt(B,A,data[:,int(self.pnm_columns['cardiac'])-1])
+
+            data = np.array(data)
+
         np.savetxt(matstructfile[:-3]+'txt', data, fmt='%.4f', delimiter='\t')
 
     def pnm_stage1(self):
@@ -466,7 +504,7 @@ class PreprocessingRS(object):
         subj_paths = [os.path.join(s, self.physio) for s in self.list_subjects]
 
         # # (un)comment
-        # s = self.list_subjects[2]
+        # s = self.list_subjects[4]
         # print(s)
         # subj_paths = [os.path.join(s, self.physio)]
         # #
@@ -477,7 +515,7 @@ class PreprocessingRS(object):
 
         Parallel(n_jobs=self.n_jobs,
                  verbose=100,
-                 backend="threading")(delayed(self._fsl_pnm_stage1)(sub)\
+                 backend="multiprocessing")(delayed(self._fsl_pnm_stage1)(sub)\
                  for sub in subj_paths)
 
         print("### Info: Physiological preparetion done in %.3f s" %(time.time() - start ))
@@ -486,22 +524,24 @@ class PreprocessingRS(object):
     def _fsl_pnm_stage1(self, sps):
 
         subjname = sps.split('/')[-2]
+        os.chdir(sps) 
+        _, _, FS = self.__get_mat_info()
         # fslFixText / popp
 
         # you can play with smoothcard param choosing 0.2-0.5
 
         run_string = 'cd %s; %sbin/fslFixText ./%s.txt ./%s_input.txt; %sbin/pnm_stage1 -i ./%s_input.txt -o %s -s %s --tr=2.5 \
-        --smoothcard=0.3 --smoothresp=0.1 --resp=%s --cardiac=%s --trigger=%s' % (sps, 
-                                                                               self.FSL_PATH, 
-                                                                               subjname,
-                                                                               subjname,
-                                                                               self.FSL_PATH,
-                                                                               subjname,
-                                                                               subjname,                                                                               
-                                                                               self.FS,
-                                                                               self.pnm_columns['resp'],
-                                                                               self.pnm_columns['cardiac'],  
-                                                                               self.pnm_columns['trigger'])                                                                               
+        --smoothcard=0.3 --smoothresp=0.1 --resp=%s --cardiac=%s --trigger=%s' % (sps,
+                                                                                  self.FSL_PATH, 
+                                                                                  subjname,
+                                                                                  subjname,
+                                                                                  self.FSL_PATH,
+                                                                                  subjname,
+                                                                                  subjname,                                                                               
+                                                                                  FS,
+                                                                                  self.pnm_columns['resp'],
+                                                                                  self.pnm_columns['cardiac'],  
+                                                                                  self.pnm_columns['trigger'])                                                                               
 
         #/usr/local/fsl/bin/popp -i ./sub-001_input.txt -o ./Stim -s 2000 --tr=2.5 --smoothcard=0.3 --smoothresp=0.1 --resp=1 --cardiac=2 --trigger=3
 
@@ -528,7 +568,7 @@ class PreprocessingRS(object):
 
             Parallel(n_jobs=self.n_jobs,
                      verbose=100,
-                     backend="threading")(delayed(self._check_peaks_car_persub)(sub)\
+                     backend="multiprocessing")(delayed(self._check_peaks_car_persub)(sub)\
                      for sub in subj_paths)
         else:
             # manual check of the peaks
@@ -546,11 +586,14 @@ class PreprocessingRS(object):
         else:
             sub_path = os.path.join(self.parent_path, sps, self.physio)
             subname = sps
-        
+        os.chdir(sps)
+        _, _, FS = self.__get_mat_info()
+        print(f"### Info: FS = {FS}")
+
         seq_input = np.loadtxt(os.path.join(sub_path, subname+'_input.txt'))
         seq_card = np.loadtxt(os.path.join(sub_path, subname+'_card.txt'))
         
-        seq_card = (np.round(seq_card*self.FS)).astype(int)
+        seq_card = (np.round(seq_card*FS)).astype(int)
 
         # Find triggers 
         col_tr = np.int(self.pnm_columns["trigger"])-1   # in python -1 indexing
@@ -562,8 +605,8 @@ class PreprocessingRS(object):
 
         fig = self.__interactive_plot(card_signal, indices)
         fig.write_html(os.path.join(sub_path, '%s_hr_peaks.html') % subname)
-
-        auto_detect = indices/self.FS
+        
+        auto_detect = indices/FS
         np.savetxt(os.path.join(sub_path, subname+'_card_auto.txt'), auto_detect, delimiter='\n', fmt='%.3f') 
         
     def __interactive_plot(self, card_signal, auto_idx):
@@ -622,7 +665,7 @@ class PreprocessingRS(object):
 
         Parallel(n_jobs=self.n_jobs,
                  verbose=100,
-                 backend="threading")(delayed(self._fsl_pnm_evs)(sub)\
+                 backend="multiprocessing")(delayed(self._fsl_pnm_evs)(sub)\
                  for sub in subj_paths)
 
         print("### Info: EVS generation done in %.3f s" %(time.time() - start ))
@@ -641,22 +684,24 @@ class PreprocessingRS(object):
             # if there is a mask of the CSF only (mask_csf.nii) : it can be manually created or using 
             # fslmaths subtracting the mask of only the spinal cord from the mask of CSF+cord 
 
-            run_string = 'cd %s; %sbin/pnm_evs -i ../%s/mfmri.nii.gz -c %s_card%s.txt -r Stim_resp.txt -o %s --tr=2.5 --oc=4 --or=4 --multc=2 \
+            run_string = 'cd %s; %sbin/pnm_evs -i ../%s/mfmri.nii.gz -c %s_card%s.txt -r %s_resp.txt -o %s/ --tr=2.5 --oc=4 --or=4 --multc=2 \
             --multr=2 --csfmask="../%s/Segmentation/mask_csf.nii.gz" --sliceorder=up --slicedir=z' % (sub, 
                                                                                                   self.FSL_PATH,
                                                                                                   self.func,
                                                                                                   subname,
                                                                                                   auto_mode,
                                                                                                   sub,
+                                                                                                  sub,
                                                                                                   self.func)
         else :
             # if no csf mask
-            run_string = 'cd %s; %sbin/pnm_evs -i ../%s/mfmri.nii.gz -c %s_card%s.txt -r Stim_resp.txt -o %s/ --tr=2.5 --oc=4 --or=4 --multc=2 \
+            run_string = 'cd %s; %sbin/pnm_evs -i ../%s/mfmri.nii.gz -c %s_card%s.txt -r %s_resp.txt -o %s/ --tr=2.5 --oc=4 --or=4 --multc=2 \
             --multr=2 --sliceorder=up --slicedir=z' % (sub, 
                                                       self.FSL_PATH,
                                                       self.func,
                                                       subname,
                                                       auto_mode,
+                                                      subname,
                                                       sub)
 
 
@@ -664,7 +709,7 @@ class PreprocessingRS(object):
         os.system(run_string)
 
         subname = sub.split('/')[-2]
-        run_string2 = 'ls -1 `%s/bin/imglob -extensions %s/ev0*` > %s/%s_evlist.txt' % (self.FSL_PATH,
+        run_string2 = 'ls -1 `%sbin/imglob -extensions %s/ev0*` > %s/%s_evlist.txt' % (self.FSL_PATH,
                                                                                        sub,
                                                                                        sub,
                                                                                        subname)
@@ -690,7 +735,7 @@ class PreprocessingRS(object):
 
         Parallel(n_jobs=self.n_jobs,
                 verbose=100,
-                backend="threading")(delayed(self._fsl_motion_outliers)(sub)\
+                backend="multiprocessing")(delayed(self._fsl_motion_outliers)(sub)\
                 for sub in subj_paths)
 
         print("### Info: motion outliers generation done in %.3f s" %(time.time() - start ))
@@ -699,7 +744,8 @@ class PreprocessingRS(object):
 
     def _fsl_motion_outliers(self, sps):
 
-        run_string = 'cd %s; fsl_motion_outliers -i mfmri.nii.gz -o outliers.txt —m ../Segmentation/%s.nii.gz -p outliers.png --dvars --nomoco;' % (sps, self.mask_fname)
+        ### edited segmentation path 
+        run_string = 'cd %s; fsl_motion_outliers -i mfmri.nii.gz -o outliers.txt —m Segmentation/%s.nii.gz -p outliers.png --dvars --nomoco;' % (sps, self.mask_fname)
         print(run_string)
         os.system(run_string)
         # Copy header information from moco functional to moco parameters       
@@ -735,14 +781,21 @@ class PreprocessingRS(object):
 
         os.system('export DIREC=%s; export FSL_TEMP=%s; bash %s/noisereg_subtemplate.sh' % (sps, self.fsl_template_dir, self.working_dir))
 
-        run_string4 = 'export PATH="/usr/bin/:$PATH"; cd %s; fsl5.0-feat ./design_noiseregression.fsf; cp noise_regression.feat/stats/res4d.nii.gz mfmri_denoised.nii.gz;\
-                       fslcpgeom mfmri.nii.gz mfmri_denoised.nii.gz' % (sps)
+        if os.uname()[1] in ['miplabsrv3','miplabsrv4']:
+            add_paths = 'export PATH="/usr/bin/:$PATH";'
+            fsl_feat = 'fsl5.0-feat'
+        elif os.uname()[1] in ['stiitsrv21','stiitsrv22','stiitsrv23']:
+            add_paths = 'FSLDIR=/usr/local/fsl; . ${FSLDIR}/etc/fslconf/fsl.sh;'
+            fsl_feat = 'feat'
+
+        run_string4 = f'{add_paths} cd {sps}; {fsl_feat} ./design_noiseregression.fsf; cp noise_regression.feat/stats/res4d.nii.gz mfmri_denoised.nii.gz;\
+                       fslcpgeom mfmri.nii.gz mfmri_denoised.nii.gz'
 
         print(run_string4)
         os.system(run_string4)
     
 
-    def normalize(self, atype='after_denoise'):
+    def normalize(self):
         subj_paths = [os.path.join(s, self.func) for s in self.list_subjects]
 
         # # (un)comment
@@ -757,7 +810,7 @@ class PreprocessingRS(object):
 
         Parallel(n_jobs=self.n_jobs,
                  verbose=100,
-                 backend="threading")(delayed(self._normalization)(sub)\
+                 backend="multiprocessing")(delayed(self._normalization)(sub)\
                  for sub in subj_paths)
 
         print("### Info: normalization done in %.3f s" %(time.time() - start ))
@@ -798,7 +851,7 @@ class PreprocessingRS(object):
 
         Parallel(n_jobs=self.n_jobs,
                  verbose=100,
-                 backend="threading")(delayed(self._fslsct_smoothing)(sub)\
+                 backend="multiprocessing")(delayed(self._fslsct_smoothing)(sub)\
                  for sub in subj_paths)
 
         print("### Info: smoothing done in %.3f s" %(time.time() - start ))
@@ -810,19 +863,19 @@ class PreprocessingRS(object):
         # use smoothing with sct_math on the normalized images
         # otherwise smooth the denoised images directly
         if os.path.exists(os.path.join(sps,'mfmri_denoised_n.nii.gz')):
-            os.system('export DIREC=%s; bash %s/smoothing_math.sh' % (sps, self.working_dir))
+            os.system('export DIREC=%s; export MASK_NAME=%s.nii.gz; bash %s/smoothing_math.sh' % (sps, self.mask_fname, self.working_dir))
         else:        
-            os.system('export DIREC=%s; bash %s/smoothing.sh' % (sps, self.working_dir))
+            os.system('export DIREC=%s; export MASK_NAME=%s.nii.gz; bash %s/smoothing.sh' % (sps, self.mask_fname, self.working_dir))
 
     def prepare_for_ta(self): 
         start = time.time()
         subj_paths = [os.path.join(s, self.func) for s in self.list_subjects]
 
-        ## (un)comment
-        # s = self.list_subjects[2]
+        # ## (un)comment
+        # s = self.list_subjects[12]
         # print(s)
         # subj_paths = [os.path.join(s, self.func)]
-        ##
+        # ##
         
         # subs_oi = []
         # for s in self.list_subjects:
@@ -834,7 +887,7 @@ class PreprocessingRS(object):
 
         Parallel(n_jobs=self.n_jobs,
                  verbose=100,
-                 backend="threading")(delayed(self._prep_for_ta)(sub)\
+                 backend="multiprocessing")(delayed(self._prep_for_ta)(sub)\
                  for sub in subj_paths)
 
         print("### Info: preparetion for TA done in %.3f s" %(time.time() - start ))
