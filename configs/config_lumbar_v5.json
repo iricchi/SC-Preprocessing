@@ -1,0 +1,64 @@
+{
+    "n_jobs" : 50,
+    "version": 2,
+    "tmp_path": "/home/iricchi/tmp/",
+    "fmriname": "fmri_st_corr",
+
+    "SCT_PATH": "/home/iricchi/sct_5.3.0/",
+    "FSL_PATH": "/usr/local/fsl/",
+    
+    "parent_path": "/media/miplab-nas2/Data2/SpinalCord/Spinal_fMRI_Lumbar/",
+    "data_root" : "LU_",
+    "subs2exclude": ["LU_AM","LU_LP","LU_RL","LU_VS"],
+
+    "fsl_template_dir": "/home/iricchi/PhDProjects/common_templates/template_fsf_rest",
+
+    "anat": "anat",
+    "func": "func",
+    "physio": "physio",
+    
+    "csf_mask": false, 
+    "mask_csf_name": "mask_csf",
+    "TR": 2.5,
+
+    "anat_norm" : false,
+    "slice_timing": false,
+    "moco": false,
+    "func_norm" : true,
+    "mask_fname": "mask_sco",
+
+    "pnm0_preptxt": false,
+    "pnm1_stage1": false,
+    "pnm1_card": true,
+    "pnm1_resp": true,
+
+    "pnm2_peaks": false,
+    "pnm3_gen_evs": false,
+    
+    "denoising_regs": ["pnm"],
+
+    "filter_evs": "BP13",
+
+    "pnm_columns": { "resp" : "1",
+                     "cardiac" : "2",
+                     "trigger" : "3"
+                   },
+    "mode": "auto",
+    
+    "filter_cardiac": true,
+    "cof": 2,
+
+    "denoising": true,
+    "normalization": false,
+    "transf_type": "nn",
+
+
+    "smoothing": false,
+    "s_zsize": 4,
+    "smooth_after_norm": false,
+    "prep_for_ta": false,
+
+    "pam50_path": "/home/iricchi/PhDProjects/Lumbar/templates/template",
+    "pam50_template": "PAM50_t2_lumbar_crop",
+    "pam50_maskname": "PAM50_cord_lumbar"
+}
