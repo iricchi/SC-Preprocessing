@@ -127,16 +127,20 @@ import requests
 
 global YFACTOR, TRG
 
+# global variables
+
+# trigger values for physio (in CB the biopack trigger value is 5, in Kaptan's data is 1)
 TRG = 1 # 5 IN CB, 1 FOR KAPTAN'S
+# this is to scale the y axis of the cardiac signal (it depends on the amplitutes)
 YFACTOR = 100  # 10 for CB and Rob's , 100 for Kaptan's
 
-def _send_message_telegram(whatever):
+# def _send_message_telegram(whatever):
 
-    TOKEN = "5979998311:AAGl9Did2fwB_1rEd0RHA496Qox6xLghrOM"
-    chat_id = "626146439"
-    message = f"Pipeline: I'm done with {whatever}! "
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={message}"
-    print(requests.get(url).json()) # this sends the message
+#     TOKEN = "5979998311:AAGl9Did2fwB_1rEd0RHA496Qox6xLghrOM"
+#     chat_id = "626146439"
+#     message = f"Pipeline: I'm done with {whatever}! "
+#     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={message}"
+#     print(requests.get(url).json()) # this sends the message
 
 
 class PreprocessingRS(object):
@@ -832,7 +836,7 @@ class PreprocessingRS(object):
             print(" ### SUBJECT %s chosen for single caridac peaks identification! " % self.mode)
             self._check_peaks_car_persub(self.mode, auto=False)
 
-        _send_message_telegram("PNM!")
+        #_send_message_telegram("PNM!")
         print("### Info: Physiological preparetion done in %.3f s" %(time.time() - start ))
         return
 
@@ -1056,7 +1060,7 @@ class PreprocessingRS(object):
 
         print("### Info: Denoising done in %.3f s" %(time.time() - start ))
         
-        _send_message_telegram(self.denoising_regs)
+        #_send_message_telegram(self.denoising_regs)
 
         return 
 
@@ -1419,7 +1423,7 @@ class PreprocessingRS(object):
 
         print("### Info: smoothing done in %.3f s" %(time.time() - start ))
 
-        _send_message_telegram("smoothing")
+        #_send_message_telegram("smoothing")
         return
 
     def _fslsct_smoothing(self, sps, fmriname="fmri"):
