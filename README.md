@@ -1,5 +1,7 @@
 # SC-Preprocessing
 
+The most updated working version is the v7: 01_pipeline_RS_v7.py and configs folder contains examples of working configurations files, use the latest version to ensure that the pipeline properly runs smoothly.
+
 This github folder contains 4 main folder one named "WV_common" (Working Versions) where there will be the common scripts that are approved by all members and can be run propeprly and the others contain configuration files, templates and jupyter notebooks (if any).
 
 The initial version is the not super generalized one on resting state (v0).
